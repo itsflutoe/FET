@@ -1,22 +1,261 @@
-import React,{createContext,useContext,useEffect,useMemo,useState} from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { storageService } from '../services/storageService';
 import { calculateCurrentEnergy } from '../services/energyService';
-import { ENERGY_CONFIG } from '../data/companionData';
+import { ENERGY_CONFIG, INPUT_LIMITS } from '../data/companionData';
 import { geminiService } from '../services/geminiService';
-const C=createContext(null);
-export function CompanionProvider({children}){
- const [profile,setProfile]=useState(()=>storageService.getProfile());
- const [apiKey,setApiKey]=useState(()=>storageService.getApiKey());
- const [energyState,setEnergyState]=useState(()=>profile?calculateCurrentEnergy(profile):{energy:5,nextRegenMs:0});
- const [lastError,setLastError]=useState(null);
- useEffect(()=>{if(!profile)return;const update=()=>{const c=calculateCurrentEnergy(profile);if(c.energy!==profile.energy||c.lastEnergyUpdate!==profile.lastEnergyUpdate){const p={...profile,energy:c.energy,lastEnergyUpdate:c.lastEnergyUpdate};setProfile(p);storageService.saveProfile(p)}setEnergyState({energy:c.energy,nextRegenMs:c.nextRegenMs})};update();const id=setInterval(update,1000);return()=>clearInterval(id)},[profile]);
- const createPet=data=>{const p={name:data.name?.trim()||'Lumi',gender:data.gender||'Prefer not to specify',species:data.species||'fox',personality:data.personality||'friendly',level:1,xp:0,energy:5,maxEnergy:5,createdAt:new Date().toISOString(),lastEnergyUpdate:Date.now(),memories:[],studyProfile:{weakTopics:[],recentMistakes:[]}};setProfile(p);storageService.saveProfile(p)};
- const updateProfile=changes=>setProfile(p=>{const n={...p,...changes};storageService.saveProfile(n);return n});
- const updateApiKey=k=>{if(k.trim())storageService.saveApiKey(k);else storageService.removeApiKey();setApiKey(k.trim())};
- const addXp=amount=>setProfile(p=>{if(!p)return p;let xp=p.xp+amount,level=p.level;while(xp>=level*100){xp-=level*100;level++}const n={...p,xp,level};storageService.saveProfile(n);return n});
- const performAction=async(prompt,cost=1,xp=5,contextType='chat',studyContext=null)=>{setLastError(null);const current=calculateCurrentEnergy(profile);if(current.energy<cost)throw {type:'NO_ENERGY'};try{const result=await geminiService.generateResponse(profile,prompt,contextType,studyContext);const c=calculateCurrentEnergy(profile);const p={...profile,energy:Math.max(0,c.energy-cost),lastEnergyUpdate:Date.now()};setProfile(p);storageService.saveProfile(p);setEnergyState({energy:p.energy,nextRegenMs:p.energy>=p.maxEnergy?0:ENERGY_CONFIG.REGEN_INTERVAL_MINUTES*60000});addXp(xp);return result.text}catch(e){setLastError(e);throw e}};
- const resetAll=()=>{storageService.clearAll();setProfile(null);setApiKey('');setLastError(null)};
- const value=useMemo(()=>({profile,apiKey,energyState,lastError,createPet,updateProfile,updateApiKey,performAction,resetAll,setLastError}),[profile,apiKey,energyState,lastError]);
- return <C.Provider value={value}>{children}</C.Provider>
+
+const CompanionContext = createContext(null);
+
+function pushCapped(list, item, max) {
+  const next = [...(list || []), item];
+  return next.length > max ? next.slice(next.length - max) : next;
 }
-export function useCompanion(){const v=useContext(C);if(!v)throw new Error('useCompanion must be used within CompanionProvider');return v}
+
+export function CompanionProvider({ children }) {
+  const [profile, setProfile] = useState(() => storageService.getProfile());
+  const [apiKey, setApiKey] = useState(() => storageService.getApiKey());
+  const [energyState, setEnergyState] = useState(() =>
+    profile
+      ? (() => {
+          const c = calculateCurrentEnergy(profile);
+          return { energy: c.energy, nextRegenMs: c.nextRegenMs };
+        })()
+      : { energy: ENERGY_CONFIG.MAX_ENERGY, nextRegenMs: 0 }
+  );
+  const [lastError, setLastError] = useState(null);
+
+  // Always-current profile ref so interval + actions never use stale closures.
+  const profileRef = useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
+  // Energy regen tick — only persists when energy actually changes.
+  useEffect(() => {
+    if (!profile) return undefined;
+
+    const tick = () => {
+      const current = profileRef.current;
+      if (!current) return;
+      const c = calculateCurrentEnergy(current);
+      setEnergyState({ energy: c.energy, nextRegenMs: c.nextRegenMs });
+
+      if (
+        c.energy !== current.energy ||
+        c.lastEnergyUpdate !== current.lastEnergyUpdate
+      ) {
+        const next = {
+          ...current,
+          energy: c.energy,
+          lastEnergyUpdate: c.lastEnergyUpdate,
+        };
+        profileRef.current = next;
+        setProfile(next);
+        storageService.saveProfile(next);
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [profile?.createdAt]); // re-bind only when a new pet is created
+
+  const createPet = useCallback((data) => {
+    const p = {
+      name: data.name?.trim() || 'Lumi',
+      gender: data.gender || 'Prefer not to specify',
+      species: data.species || 'fox',
+      personality: data.personality || 'friendly',
+      level: 1,
+      xp: 0,
+      energy: ENERGY_CONFIG.MAX_ENERGY,
+      maxEnergy: ENERGY_CONFIG.MAX_ENERGY,
+      createdAt: new Date().toISOString(),
+      lastEnergyUpdate: Date.now(),
+      memories: [],
+      studyProfile: { weakTopics: [], recentMistakes: [] },
+    };
+    profileRef.current = p;
+    setProfile(p);
+    storageService.saveProfile(p);
+    setEnergyState({ energy: p.energy, nextRegenMs: 0 });
+  }, []);
+
+  const updateProfile = useCallback((changes) => {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...changes };
+      profileRef.current = next;
+      storageService.saveProfile(next);
+      return next;
+    });
+  }, []);
+
+  const updateApiKey = useCallback((k) => {
+    if (k.trim()) storageService.saveApiKey(k);
+    else storageService.removeApiKey();
+    setApiKey(k.trim());
+  }, []);
+
+  const addXp = useCallback((amount) => {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      let xp = prev.xp + amount;
+      let level = prev.level;
+      while (xp >= level * 100) {
+        xp -= level * 100;
+        level += 1;
+      }
+      const next = { ...prev, xp, level };
+      profileRef.current = next;
+      storageService.saveProfile(next);
+      return next;
+    });
+  }, []);
+
+  /**
+   * Spend energy, call Gemini, award XP, and optionally update study memory.
+   * Uses profileRef so concurrent regen ticks cannot race the spend.
+   */
+  const performAction = useCallback(
+    async (prompt, cost = 1, xp = 5, contextType = 'chat', studyContext = null, recentMessages = []) => {
+      setLastError(null);
+      const current = calculateCurrentEnergy(profileRef.current);
+      if (current.energy < cost) {
+        const err = { type: 'NO_ENERGY' };
+        setLastError(err);
+        throw err;
+      }
+
+      try {
+        const result = await geminiService.generateResponse(
+          profileRef.current,
+          prompt,
+          contextType,
+          studyContext,
+          recentMessages
+        );
+
+        const after = calculateCurrentEnergy(profileRef.current);
+        const spentEnergy = Math.max(0, after.energy - cost);
+        let next = {
+          ...profileRef.current,
+          energy: spentEnergy,
+          lastEnergyUpdate: Date.now(),
+        };
+
+        // Study-profile / memory updates from teach & review modes
+        if (contextType === 'review' && studyContext?.topic) {
+          const mistakes = pushCapped(
+            next.studyProfile?.recentMistakes,
+            studyContext.topic,
+            INPUT_LIMITS.MAX_RECENT_MISTAKES
+          );
+          const weakTopics = pushCapped(
+            next.studyProfile?.weakTopics,
+            studyContext.topic,
+            INPUT_LIMITS.MAX_WEAK_TOPICS
+          );
+          next = {
+            ...next,
+            studyProfile: { ...next.studyProfile, recentMistakes: mistakes, weakTopics },
+            memories: pushCapped(
+              next.memories,
+              `Reviewed: ${studyContext.topic}`,
+              INPUT_LIMITS.MAX_MEMORIES
+            ),
+          };
+        } else if (contextType === 'teach' && studyContext?.topic) {
+          next = {
+            ...next,
+            memories: pushCapped(
+              next.memories,
+              `Taught: ${studyContext.topic}`,
+              INPUT_LIMITS.MAX_MEMORIES
+            ),
+          };
+        } else if (contextType === 'chat' && prompt) {
+          const snippet = prompt.length > 60 ? `${prompt.slice(0, 57)}…` : prompt;
+          next = {
+            ...next,
+            memories: pushCapped(
+              next.memories,
+              `Chat: ${snippet}`,
+              INPUT_LIMITS.MAX_MEMORIES
+            ),
+          };
+        }
+
+        profileRef.current = next;
+        setProfile(next);
+        storageService.saveProfile(next);
+        setEnergyState({
+          energy: next.energy,
+          nextRegenMs:
+            next.energy >= (next.maxEnergy ?? ENERGY_CONFIG.MAX_ENERGY)
+              ? 0
+              : ENERGY_CONFIG.REGEN_INTERVAL_MINUTES * 60_000,
+        });
+        addXp(xp);
+        return result.text;
+      } catch (e) {
+        setLastError(e);
+        throw e;
+      }
+    },
+    [addXp]
+  );
+
+  const resetAll = useCallback(() => {
+    storageService.clearAll();
+    profileRef.current = null;
+    setProfile(null);
+    setApiKey('');
+    setLastError(null);
+    setEnergyState({ energy: ENERGY_CONFIG.MAX_ENERGY, nextRegenMs: 0 });
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      profile,
+      apiKey,
+      energyState,
+      lastError,
+      createPet,
+      updateProfile,
+      updateApiKey,
+      performAction,
+      resetAll,
+      setLastError,
+    }),
+    [
+      profile,
+      apiKey,
+      energyState,
+      lastError,
+      createPet,
+      updateProfile,
+      updateApiKey,
+      performAction,
+      resetAll,
+    ]
+  );
+
+  return (
+    <CompanionContext.Provider value={value}>{children}</CompanionContext.Provider>
+  );
+}
+
+export function useCompanion() {
+  const v = useContext(CompanionContext);
+  if (!v) throw new Error('useCompanion must be used within CompanionProvider');
+  return v;
+}
