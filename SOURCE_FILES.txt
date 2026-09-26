@@ -5,6 +5,7 @@ package.json
 src/App.jsx
 src/components/Dashboard.jsx
 src/components/EnergyBar.jsx
+src/components/ErrorBoundary.jsx
 src/components/Onboarding.jsx
 src/components/PetAvatar.jsx
 src/data/companionData.js
