@@ -1,2 +1,28 @@
 import React from 'react';
-export default function EnergyBar({energy,maxEnergy=5,nextRegenMs}){const pct=(energy/maxEnergy)*100;const format=ms=>{if(!ms)return 'Fully rested!';const s=Math.ceil(ms/1000),m=Math.floor(s/60),sec=s%60;return `Next energy in ${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`};return <div className="energy-wrap"><div className="energy-top"><span>⚡ Energy</span><b>{energy}/{maxEnergy}</b></div><div className="energy-track"><div className="energy-fill" style={{width:`${pct}%`}}/></div><small>{energy>=maxEnergy?'Fully rested!':format(nextRegenMs)}</small></div>}
+
+export default function EnergyBar({ energy, maxEnergy = 5, nextRegenMs }) {
+  const pct = (energy / maxEnergy) * 100;
+
+  const format = (ms) => {
+    if (!ms) return 'Fully rested!';
+    const s = Math.ceil(ms / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `Next energy in ${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="energy-wrap">
+      <div className="energy-top">
+        <span>⚡ Energy</span>
+        <b>
+          {energy}/{maxEnergy}
+        </b>
+      </div>
+      <div className="energy-track">
+        <div className="energy-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <small>{energy >= maxEnergy ? 'Fully rested!' : format(nextRegenMs)}</small>
+    </div>
+  );
+}
