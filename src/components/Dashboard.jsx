@@ -152,7 +152,6 @@ export default function Dashboard() {
   const [mood, setMood] = useState('happy');
   const [stats, setStats] = useState(() => storageService.getStats());
 
-  // Persist conversation (capped).
   useEffect(() => {
     const capped =
       messages.length > INPUT_LIMITS.MAX_STORED_MESSAGES
@@ -305,7 +304,11 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="hero-energy">
-            <EnergyBar energy={energy} nextRegenMs={energyState.nextRegenMs} />
+            <EnergyBar
+              energy={energy}
+              maxEnergy={profile.maxEnergy ?? 40}
+              nextRegenMs={energyState.nextRegenMs}
+            />
           </div>
         </section>
 
