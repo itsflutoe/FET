@@ -1,7 +1,12 @@
 import React from 'react';
+import { ENERGY_CONFIG } from '../data/companionData';
 
-export default function EnergyBar({ energy, maxEnergy = 5, nextRegenMs }) {
-  const pct = (energy / maxEnergy) * 100;
+export default function EnergyBar({
+  energy,
+  maxEnergy = ENERGY_CONFIG.MAX_ENERGY,
+  nextRegenMs,
+}) {
+  const pct = Math.min(100, (energy / maxEnergy) * 100);
 
   const format = (ms) => {
     if (!ms) return 'Fully rested!';

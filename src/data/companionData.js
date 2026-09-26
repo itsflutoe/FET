@@ -49,30 +49,34 @@ export const PERSONALITY_DATA = {
   },
 };
 
-/** Companion energy is an FLPT UX abstraction, not Gemini quota. */
+/**
+ * Companion energy is an FLPT UX abstraction — not Gemini API quota.
+ * Tuned generously for free-tier Flash-Lite usage (high TPM / large context),
+ * while still pacing the experience so the pet feels "alive".
+ */
 export const ENERGY_CONFIG = {
-  MAX_ENERGY: 5,
-  REGEN_INTERVAL_MINUTES: 15,
+  MAX_ENERGY: 40,
+  REGEN_INTERVAL_MINUTES: 3,
   COSTS: { CHAT: 1, TEACH: 1, REVIEW: 1 },
 };
 
 /**
  * Gemini model: gemini-3.5-flash-lite
- * Official replacement path for the 2.5 Flash family for high-volume,
- * cost-sensitive tasks (ai.google.dev / Cloud model lifecycle, Sep 2026).
+ * Free tier offers a large context window and high TPM; we use a practical
+ * slice of that (recent turns + memory) rather than dumping full history.
  */
 export const GEMINI_CONFIG = {
   DEFAULT_MODEL: 'gemini-3.5-flash-lite',
-  MAX_OUTPUT_TOKENS: 500,
+  MAX_OUTPUT_TOKENS: 1024,
   TEMPERATURE: 0.7,
 };
 
-/** Client-side limits to control token usage. */
+/** Client-side limits — use more free-tier capacity without waste. */
 export const INPUT_LIMITS = {
-  MAX_MESSAGE_CHARS: 800,
-  MAX_STORED_MESSAGES: 40,
-  RECENT_CONTEXT_MESSAGES: 6,
-  MAX_MEMORIES: 12,
-  MAX_WEAK_TOPICS: 8,
-  MAX_RECENT_MISTAKES: 8,
+  MAX_MESSAGE_CHARS: 2000,
+  MAX_STORED_MESSAGES: 80,
+  RECENT_CONTEXT_MESSAGES: 16,
+  MAX_MEMORIES: 20,
+  MAX_WEAK_TOPICS: 12,
+  MAX_RECENT_MISTAKES: 12,
 };
