@@ -610,10 +610,11 @@ label select:focus {
 body:has(.onboarding) { overflow: auto; }
 .onboarding {
   min-height: 100%;
+  min-height: 100dvh;
   overflow-y: auto;
   display: grid;
   place-items: center;
-  padding: 24px 16px 40px;
+  padding: 72px 16px 40px;
 }
 .onboarding .brand {
   position: fixed;
@@ -623,11 +624,13 @@ body:has(.onboarding) { overflow: auto; }
 }
 .onboard-card {
   width: min(420px, 100%);
-  padding: 28px 24px;
+  max-width: 100%;
+  padding: 24px 18px 28px;
   background: var(--card);
   border: 1px solid var(--stroke);
   border-radius: 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
 }
 .step {
   font-size: 10px;
@@ -636,13 +639,16 @@ body:has(.onboarding) { overflow: auto; }
   font-weight: 800;
 }
 .onboard-card h1 {
-  font-size: 26px;
+  font-size: clamp(1.35rem, 5vw, 1.65rem);
   margin: 10px 0 6px;
   letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 .onboard-card h2 {
-  font-size: 14px;
-  margin: 20px 0 10px;
+  font-size: 13px;
+  margin: 18px 0 10px;
+  color: var(--muted);
+  font-weight: 600;
 }
 .onboard-card label {
   display: block;
@@ -666,51 +672,107 @@ body:has(.onboarding) { overflow: auto; }
   background: transparent;
   color: var(--faint);
 }
+
 .choice-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
 }
 .choice {
-  aspect-ratio: 1;
+  min-width: 0;
   border: 1px solid var(--stroke);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
-  font-size: 1.6rem;
-  display: grid;
-  place-items: center;
+  color: var(--text);
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  gap: 4px;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
+.choice span {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+.choice b {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.choice small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--faint);
+  font-weight: 500;
+}
+.choice.selected,
 .choice.active {
   border-color: var(--accent);
   background: rgba(34, 211, 238, 0.12);
   box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
 }
-.personality-list {
+
+.pill-grid {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
+  margin-bottom: 4px;
 }
-.personality-option {
-  text-align: left;
-  padding: 12px 14px;
-  border-radius: 12px;
+.pill {
   border: 1px solid var(--stroke);
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  line-height: 1.2;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
-.personality-option.active {
-  border-color: rgba(34, 211, 238, 0.45);
-  background: rgba(34, 211, 238, 0.1);
+.pill.selected,
+.pill.active {
+  border-color: transparent;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  color: #06101c;
+  font-weight: 700;
 }
-.personality-option strong { display: block; font-size: 14px; }
-.personality-option span { font-size: 12px; color: var(--muted); }
+
+.big-pet {
+  font-size: 3.5rem;
+  text-align: center;
+  margin: 8px 0 4px;
+  line-height: 1;
+}
+.link-btn {
+  display: inline-block;
+  margin: 8px 0 4px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
 .key-status {
   margin-top: 8px;
   font-size: 13px;
   font-weight: 600;
 }
-.key-status.ok { color: #6ee7b7; }
-.key-status.off { color: var(--faint); }
+.key-status.ok,
+.key-status.connected { color: #6ee7b7; }
+.key-status.off,
+.key-status.missing { color: var(--faint); }
+
+@media (min-width: 480px) {
+  .onboard-card { padding: 28px 24px; }
+  .choice-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 
 @media (max-height: 700px) {
   .pet-size-hero {
