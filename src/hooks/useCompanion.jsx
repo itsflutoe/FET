@@ -20,7 +20,22 @@ function pushCapped(list, item, max) {
 }
 
 export function CompanionProvider({ children }) {
-  const [profile, setProfile] = useState(() => storageService.getProfile());
+  const [profile, setProfile] = useState(() => {
+    const p = storageService.getProfile();
+    if (!p) return null;
+    // Migrate older pets to the current energy pool (UX meter, not API quota).
+    if ((p.maxEnergy ?? 0) < ENERGY_CONFIG.MAX_ENERGY) {
+      const migrated = {
+        ...p,
+        maxEnergy: ENERGY_CONFIG.MAX_ENERGY,
+        energy: ENERGY_CONFIG.MAX_ENERGY,
+        lastEnergyUpdate: Date.now(),
+      };
+      storageService.saveProfile(migrated);
+      return migrated;
+    }
+    return p;
+  });
   const [apiKey, setApiKey] = useState(() => storageService.getApiKey());
   const [energyState, setEnergyState] = useState(() =>
     profile
@@ -32,13 +47,11 @@ export function CompanionProvider({ children }) {
   );
   const [lastError, setLastError] = useState(null);
 
-  // Always-current profile ref so interval + actions never use stale closures.
   const profileRef = useRef(profile);
   useEffect(() => {
     profileRef.current = profile;
   }, [profile]);
 
-  // Energy regen tick — only persists when energy actually changes.
   useEffect(() => {
     if (!profile) return undefined;
 
@@ -66,7 +79,7 @@ export function CompanionProvider({ children }) {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [profile?.createdAt]); // re-bind only when a new pet is created
+  }, [profile?.createdAt]);
 
   const createPet = useCallback((data) => {
     const p = {
@@ -121,10 +134,6 @@ export function CompanionProvider({ children }) {
     });
   }, []);
 
-  /**
-   * Spend energy, call Gemini, award XP, and optionally update study memory.
-   * Uses profileRef so concurrent regen ticks cannot race the spend.
-   */
   const performAction = useCallback(
     async (prompt, cost = 1, xp = 5, contextType = 'chat', studyContext = null, recentMessages = []) => {
       setLastError(null);
@@ -152,7 +161,6 @@ export function CompanionProvider({ children }) {
           lastEnergyUpdate: Date.now(),
         };
 
-        // Study-profile / memory updates from teach & review modes
         if (contextType === 'review' && studyContext?.topic) {
           const mistakes = pushCapped(
             next.studyProfile?.recentMistakes,
