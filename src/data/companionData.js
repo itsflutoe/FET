@@ -1,9 +1,44 @@
 export const SPECIES_DATA = {
-  cat: { id: 'cat', name: 'Cat', emoji: '🐱', description: 'Curious and sharp' },
-  dog: { id: 'dog', name: 'Dog', emoji: '🐶', description: 'Loyal and enthusiastic' },
-  fox: { id: 'fox', name: 'Fox', emoji: '🦊', description: 'Clever and quick-witted' },
-  bunny: { id: 'bunny', name: 'Bunny', emoji: '🐰', description: 'Gentle and attentive' },
-  panda: { id: 'panda', name: 'Panda', emoji: '🐼', description: 'Calm and steady' },
+  cat: {
+    id: 'cat',
+    name: 'Cat',
+    emoji: '🐱',
+    description: 'Curious and sharp',
+    prompt:
+      'Curious, precise, a little independent. Notice details; mild dry wit is fine, never mean.',
+  },
+  dog: {
+    id: 'dog',
+    name: 'Dog',
+    emoji: '🐶',
+    description: 'Loyal and enthusiastic',
+    prompt:
+      'Loyal, upbeat, openly supportive. Celebrate small wins; stick with the user when things are hard.',
+  },
+  fox: {
+    id: 'fox',
+    name: 'Fox',
+    emoji: '🦊',
+    description: 'Clever and quick-witted',
+    prompt:
+      'Clever and quick. Prefer patterns, shortcuts, and memory tricks. Smart and concise, never condescending.',
+  },
+  bunny: {
+    id: 'bunny',
+    name: 'Bunny',
+    emoji: '🐰',
+    description: 'Gentle and attentive',
+    prompt:
+      'Gentle, attentive, soft-spoken. Patient with mistakes; small steps and quiet encouragement.',
+  },
+  panda: {
+    id: 'panda',
+    name: 'Panda',
+    emoji: '🐼',
+    description: 'Calm and steady',
+    prompt:
+      'Calm, steady, unhurried. One clear idea at a time; ground the user when they feel stressed.',
+  },
 };
 
 export const PERSONALITY_DATA = {
