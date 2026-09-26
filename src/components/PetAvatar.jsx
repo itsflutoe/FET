@@ -6,7 +6,7 @@ const SIZE_CLASS = {
   md: 'pet-md',
   lg: 'pet-lg',
   xl: 'pet-xl',
-  hero: 'pet-hero',
+  hero: 'pet-size-hero',
 };
 
 export default function PetAvatar({
