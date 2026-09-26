@@ -1,0 +1,3 @@
+import React from 'react';
+import { SPECIES_DATA } from '../data/companionData';
+export default function PetAvatar({species='fox',mood='happy',size='lg'}){const p=SPECIES_DATA[species]||SPECIES_DATA.fox;const sizes={sm:'w-14 h-14 text-3xl',md:'w-20 h-20 text-5xl',lg:'w-32 h-32 text-7xl',xl:'w-40 h-40 text-8xl'};const anim=mood==='sleepy'?'pet-sleepy':mood==='thinking'?'pet-thinking':mood==='excited'?'pet-excited':'pet-idle';return <div className={`pet-avatar ${sizes[size]||sizes.lg} ${anim}`} role="img" aria-label={p.name}><span>{p.emoji}</span>{mood==='sleepy'&&<span className="sleep-bubble">💤</span>}</div>}
