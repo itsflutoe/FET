@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Project site: https://itsflutoe.github.io/FET/
+// Vercel serves at the project root (e.g. https://fet.vercel.app)
 export default defineConfig({
   plugins: [react()],
-  base: '/FET/',
+  base: '/',
 });
