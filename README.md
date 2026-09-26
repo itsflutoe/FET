@@ -1,8 +1,10 @@
 # Future LPT Companion
 
-Standalone React + Vite prototype reconstructed from the supplied Gemini-generated project.
+Standalone React + Vite prototype.
 
-## Run
+**Live:** https://itsflutoe.github.io/FET/
+
+## Run locally
 
 ```bash
 npm install
@@ -15,10 +17,19 @@ npm run dev
 npm run build
 ```
 
+## GitHub Pages
+
+This repo deploys via GitHub Actions (`.github/workflows/deploy.yml`).
+
+1. Repo **Settings → Pages**
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**
+3. Push to `main` (or run the workflow manually under the Actions tab)
+
+Vite `base` is set to `/FET/` so assets load correctly on the project site.
+
 ## Notes
 
-- Companion profile, conversation history, local metrics, and the Gemini API key are stored in browser `localStorage` in this prototype.
-- The Gemini key is never intended to be committed to Git or stored on a Future LPT server.
-- The companion energy meter is an **FLPT UX abstraction**, not Gemini’s actual remaining quota.
-- Gemini model configuration is in `src/data/companionData.js` (currently `gemini-3.5-flash-lite`).
-- Chat history is capped; only recent turns and compact study memories are sent to Gemini.
+- Companion profile, conversation history, local metrics, and the Gemini API key are stored in browser `localStorage`.
+- The Gemini key is never sent to a Future LPT server.
+- Companion energy is an FLPT UX abstraction, not Gemini quota.
+- Model: `gemini-3.5-flash-lite` (see `src/data/companionData.js`).
